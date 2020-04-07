@@ -16,7 +16,7 @@ def Write(inputfile,outputfile,Dic):
         G=re.split(" |\t",line.lower().strip());
         for item in G:  
             if item=="":continue;
-            if Dic.has_key(item):
+            if item in Dic:
                 output.write(str(Dic[item])+" ");
             else:
                 output.write("1 ");
