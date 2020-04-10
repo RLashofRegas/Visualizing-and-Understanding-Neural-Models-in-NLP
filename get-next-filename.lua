@@ -24,7 +24,6 @@ local function getNextFilename(fileNameBase, fileNameExtension, filesDir, filena
         if fileName:sub(1, #fileNameBase) == fileNameBase then
             index = index + 1
             matchingFiles[index] = fileName
-            print(fileName)
         end
     end
     
@@ -40,7 +39,7 @@ local function getNextFilename(fileNameBase, fileNameExtension, filesDir, filena
     else
         local integerStart = #fileNameBase + 2
         local lastInteger = lastFileName:sub(integerStart, integerStart + filenameIntLength)
-        if (lastInteger == nil) then
+        if (lastInteger == "") then
             nextIntegerString = string.format(formatString, 0)
         else
             local nextInteger = tonumber(lastInteger) + 1
