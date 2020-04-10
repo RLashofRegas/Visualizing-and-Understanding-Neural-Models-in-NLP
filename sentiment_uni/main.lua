@@ -234,6 +234,8 @@ while iter<params.max_iter do
     end
 end
 
-local file=torch.DiskFile("model","w"):binary();
+local getNextFileName = require('../get-next-filename.lua')
+local modelFileName = getNextFileName('model', '', '.', 2)
+local file=torch.DiskFile(modelFileName,"w"):binary();
 file:writeObject(store_param);
 file:close();
