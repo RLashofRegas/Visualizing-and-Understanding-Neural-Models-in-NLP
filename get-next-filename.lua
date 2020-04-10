@@ -40,10 +40,12 @@ local function getNextFilename(fileNameBase, fileNameExtension, filesDir, filena
     else
         local integerStart = #fileNameBase + 2
         local lastInteger = lastFileName:sub(integerStart, integerStart + filenameIntLength)
-        local nextInteger = tonumber(lastInteger) + 1
-
-        -- format nextInteger
-        nextIntegerString = string.format(formatString, nextInteger)
+        if (lastInteger == nil) then
+            nextIntegerString = string.format(formatString, 0)
+        else
+            local nextInteger = tonumber(lastInteger) + 1
+            nextIntegerString = string.format(formatString, nextInteger)
+        end
     end
 
     return fileNameBase.."-"..nextIntegerString..fileNameExtension
