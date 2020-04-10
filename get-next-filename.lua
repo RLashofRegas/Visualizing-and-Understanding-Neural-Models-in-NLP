@@ -14,6 +14,7 @@ local function getNextFilename(fileNameBase, fileNameExtension, filesDir, filena
     -- inialize vars
     local matchingFiles = {}
     local index = 0
+    local formatString = '%0'..filenameIntLength..'d'
     
     -- get files from directory
     local fileNames = scandir(filesDir)
@@ -32,15 +33,18 @@ local function getNextFilename(fileNameBase, fileNameExtension, filesDir, filena
 
     -- get last file fileName and it's corresponding number
     local lastFileName = matchingFiles[#matchingFiles]
-    print(lastFileName)
-    local integerStart = #fileNameBase + 2
-    local lastInteger = lastFileName:sub(integerStart, integerStart + filenameIntLength)
-    print(lastInteger)
-    local nextInteger = tonumber(lastInteger) + 1
 
-    -- format nextInteger
-    local formatString = '%0'..filenameIntLength..'d'
-    local nextIntegerString = string.format(formatString, nextInteger)
+    local nextIntegerString = ""
+    if (lastFileName == nil) then
+        nextIntegerString = string.format(formatString, 0)
+    else
+        local integerStart = #fileNameBase + 2
+        local lastInteger = lastFileName:sub(integerStart, integerStart + filenameIntLength)
+        local nextInteger = tonumber(lastInteger) + 1
+
+        -- format nextInteger
+        nextIntegerString = string.format(formatString, nextInteger)
+    end
 
     return fileNameBase.."-"..nextIntegerString..fileNameExtension
 end
