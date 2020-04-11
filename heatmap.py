@@ -34,5 +34,5 @@ else:
     filename_base = 'heatmap'
 
 heatmapFileName = getNextFilename(filename_base)
-print('Creating heatmp image: ' + fi)
+print('Creating heatmap image: ' + filename_base)
 plt.savefig(heatmapFileName)
