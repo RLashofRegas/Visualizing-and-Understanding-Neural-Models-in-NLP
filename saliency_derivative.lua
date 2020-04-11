@@ -188,7 +188,15 @@ paramx[1],paramdx[1]=encoder_left:parameters()
 paramx[2],paramdx[2]=encoder_right:parameters()
 paramx[3],paramdx[3] =softmax:parameters()
 
-local file=torch.DiskFile("sentiment_bidi/model","r"):binary();
+local modelName
+if (arg[1] == nil) then
+    modelName = "model"
+else
+    modelName = arg[1]
+end
+
+print("making saliency_derivative for "..modelName)
+local file=torch.DiskFile("sentiment_bidi/"..modelName,"r"):binary();
 paramx_=file:readObject()
 file:close();
 for i=1,#paramx do 
@@ -231,7 +239,14 @@ for i=1,Word:size(2) do
 end
 saliency=torch.abs(saliency)
 
-local file=io.open("matrix","w")
+local modelName
+if (arg[1] == nil) then
+    modelName = "model"
+else
+    modelName = arg[1]
+end
+
+local file=io.open('matrix',"w")
 for i=1,saliency:size(1) do
     for j=1,saliency:size(2) do
         file:write(saliency[i][j].." ")

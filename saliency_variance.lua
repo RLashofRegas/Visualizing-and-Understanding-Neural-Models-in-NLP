@@ -10,7 +10,15 @@ local params={
 
 cutorch.setDevice(1)
 
-local file=torch.DiskFile("sentiment_uni/model","r"):binary();
+local modelName
+if (arg[1] == nil) then
+    modelName = "model"
+else
+    modelName = arg[1]
+end
+
+print("making saliency_variance for "..modelName)
+local file=torch.DiskFile("sentiment_uni/"..modelName,"r"):binary();
 paramx=file:readObject()
 file:close();
 local saliency;
@@ -32,7 +40,8 @@ while true do
     saliency=nn.Square()(saliency)
 end
 fr:close()
-local file=io.open("matrix","w")
+
+local file=io.open('matrix',"w")
 for i=1,saliency:size(1) do
     for j=1,saliency:size(2) do
         file:write(saliency[i][j].." ")

@@ -1,9 +1,9 @@
 import numpy
 import matplotlib.pylab as plt
 from os import listdir
+import sys
 
-def getNextFilename():
-    filename_base = 'heatmap'
+def getNextFilename(filename_base):
     plots_dir = 'plots'
     filename_int_length = 2
 
@@ -27,4 +27,12 @@ fig = plt.figure()
 ax = fig.add_subplot(1,1,1)
 plt.imshow(matrix_magnify, interpolation='nearest', cmap=plt.cm.Blues)
 plt.colorbar()
-plt.savefig(getNextFilename())
+
+if (len(sys.argv) > 1):
+    filename_base = sys.argv[2]
+else:
+    filename_base = 'heatmap'
+
+heatmapFileName = getNextFilename(filename_base)
+print('Creating heatmp image: ' + fi)
+plt.savefig(heatmapFileName)
