@@ -29,7 +29,7 @@ plt.imshow(matrix_magnify, interpolation='nearest', cmap=plt.cm.Blues)
 plt.colorbar()
 
 if (len(sys.argv) > 1):
-    filename_base = sys.argv[2]
+    filename_base = sys.argv[1]
 else:
     filename_base = 'heatmap'
 
