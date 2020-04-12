@@ -48,17 +48,26 @@ end
 
 
 local function lstm(x,prev_h,prev_c)
+    -- dropout weights from the input
     local drop_x=nn.Dropout(params.dropout)(x)
+    -- dropout weights from the output of the previous layer
     local drop_h=nn.Dropout(params.dropout)(prev_h)
+    -- dim x 4*dim linear layers on x and h (concatenate to create input gate)
     local i2h=nn.Linear(params.dimension,4*params.dimension)(drop_x);
     local h2h=nn.Linear(params.dimension,4*params.dimension)(drop_h);
+    -- add tensor ouputs of i2h and h2h = 1 4*dim dimensional tensor
     local gates=nn.CAddTable()({i2h,h2h});
+    -- reshape into 4 rows and "dimension" columns
+    -- !! THIS SEEMS WRONG I THINK IT"S BACKWARDS !!
     local reshaped_gates =  nn.Reshape(4,params.dimension)(gates);
+    -- split each column of the reshaped_gates into separate tensors (dimension tensors of length 4)
     local sliced_gates = nn.SplitTable(2)(reshaped_gates);
+    -- get first 4 columns as gates
     local in_gate= nn.Sigmoid()(nn.SelectTable(1)(sliced_gates))
     local in_transform= nn.Tanh()(nn.SelectTable(2)(sliced_gates))
     local forget_gate= nn.Sigmoid()(nn.SelectTable(3)(sliced_gates))
     local out_gate= nn.Sigmoid()(nn.SelectTable(4)(sliced_gates))
+    -- put gates together with incoming data
     local l1=nn.CMulTable()({forget_gate, prev_c})
     local l2=nn.CMulTable()({in_gate, in_transform})
     local next_c=nn.CAddTable()({l1,l2});
@@ -70,26 +79,40 @@ local function encoder_()
     local x_index=nn.Identity()();
     local prev_c=nn.Identity()();
     local prev_h=nn.Identity()();
+    -- 60 dimensional embedding vectors, one for each word in vocab
     local x=LookupTable(params.vocab_size,params.dimension)(x_index);
+    -- get graph nodes for computing next_h and next_c
     next_h,next_c=lstm(x,prev_h,prev_c)
+    -- input table
     inputs={prev_h,prev_c,x_index};
+    -- compile module
     local module= nn.gModule(inputs,{next_h,next_c});
+    -- initialize weights to uniform distribution based on param
     module:getParameters():uniform(-params.init_weight, params.init_weight)
+    -- transfer module to gpu
     return module:cuda();
 end
 
 
 local function softmax_()
-    local y=nn.Identity()();
+    -- inputs as identity nodes
+    local y=nn.Identity()(); -- actual class
     local h_left=nn.Identity()();
     local h_right=nn.Identity()();
+    -- linear layers with no bias for left and right lstm outputting values for each class
     local h2y_left= nn.Linear(params.dimension,5):noBias()(h_left)
     local h2y_right= nn.Linear(params.dimension,5):noBias()(h_right)
+    -- add h2y_left and h2y_right outputs
     local h=nn.CAddTable()({h2y_left,h2y_right});
-    local pred= nn.LogSoftMax()(h)
+    -- apply softmax
+    local pred= nn.LogSoftMax()(h) -- predicted class probabilities
+    -- compute error
     local err= nn.ClassNLLCriterion()({pred, y})
+    -- compile module
     local module= nn.gModule({h_left,h_right,y},{err,pred});
+    -- init params to uniform distribution
     module:getParameters():uniform(-params.init_weight, params.init_weight)
+    -- transfer module to gpu
     return module:cuda()
 end 
 
@@ -203,9 +226,15 @@ end
 cutorch.setDevice(1)
 data=require("data")
 
+-- get cuda lstms for left and right propogated networks
+-- inputs: prev_h, prev_c and indexed sentence/phrase
+-- output next_h and next_c
 encoder_left =encoder_()
 encoder_right =encoder_()
 
+-- get cuda model for error calculation.
+-- inputs: h_left, h_right, actual class
+-- outputs: error, predicted class probabilities
 softmax=softmax_();
 
 encoder_left:getParameters()
