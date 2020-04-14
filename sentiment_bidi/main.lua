@@ -396,6 +396,7 @@ while iter<params.max_iter do
     end
 end
 
+print("test accuracy: "..best_accuracy)
 -- output model to file storing best params found
 local getNextFileName = require('../get-next-filename.lua')
 local modelFileName = getNextFileName('model', '', '.', 2)
