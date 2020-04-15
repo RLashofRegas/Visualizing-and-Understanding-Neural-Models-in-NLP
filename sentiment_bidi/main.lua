@@ -10,7 +10,7 @@ local LookupTable=nn.LookupTable;
 
 local params={batch_size=1000,
     max_iter=20,
-    dimension=60,
+    dimension=3,
     dropout=0.2,
     train_file="../data/sequence_train.txt",
     --train_file="small",
@@ -81,7 +81,7 @@ local function encoder_()
     local x_index=nn.Identity()();
     local prev_c=nn.Identity()();
     local prev_h=nn.Identity()();
-    -- 60 dimensional embedding vectors, one for each word in vocab
+    -- <dimension> dimensional embedding vectors, one for each word in vocab
     -- in model returns tensor with 1 row per phrase, row is embedding vector of current word
     local x=LookupTable(params.vocab_size,params.dimension)(x_index);
     -- get graph nodes for computing next_h and next_c
@@ -230,7 +230,8 @@ local function test(filename)
     local End,Y,Word,Word_r,Delete;
 
     End=0;
-    local right=0;
+    local right_fine=0;
+    local right_coarse = 0;
     local total=0;
     -- loop through file in minibatches
     while End==0 do
@@ -252,14 +253,18 @@ local function test(filename)
         total=total+prediction:size(1);
         for i=1,prediction:size(1) do
             if Y[i]==prediction[i] then
-                right=right+1;
+                right_fine=right_fine+1;
+                right_coarse = right_coarse + 1;
+            elseif (Y[i] < 3 and prediction[i] < 3) or (Y[i] > 3 and prediction[i] > 3) then
+                right_coarse = right_coarse + 1;
             end
         end
     end
 
     -- return accuracy
-    local accuracy=right/total;
-    return accuracy;
+    local accuracy_fine=right_fine / total;
+    local accuracy_coarse = right_coarse / total;
+    return accuracy_fine, accuracy_coarse;
 end
 
 cutorch.setDevice(1)
@@ -325,6 +330,7 @@ for i=1,#paramx do
     end
 end
 local best_accuracy=-1;
+local coarse_accuracy = -1;
 
 while iter<params.max_iter do
     iter=iter+1;
@@ -381,10 +387,11 @@ while iter<params.max_iter do
         paramx[1][1]:copy(paramx[2][1])
     end
     local time2=timer:time().real;
-    acc_dev=test(params.dev_file)
-    acc_test=test(params.test_file)
+    acc_dev, acc_dev_coarse=test(params.dev_file)
+    acc_test, acc_test_coarse=test(params.test_file)
     if acc_test>best_accuracy then
         best_accuracy=acc_test;
+        coarse_accuracy = acc_test_coarse;
         for i=1,#paramx do
             for j=1,#paramx[i] do
                 store_param[i][j]:copy(paramx[i][j]);
@@ -396,10 +403,21 @@ while iter<params.max_iter do
     end
 end
 
-print("test accuracy: "..best_accuracy)
--- output model to file storing best params found
+print("test accuracy (fine-grained): "..best_accuracy)
+print("test accuracy (coarse-grained): "..coarse_accuracy)
+
+-- get next file name to store
+local modelName
+if (arg[1] == nil) then
+    modelName = "model"
+else
+    modelName = arg[1]
+end
 local getNextFileName = require('../get-next-filename.lua')
-local modelFileName = getNextFileName('model', '', '.', 2)
+local modelFileName = getNextFileName(modelName, '', '.', 2)
+print('Saving model at: '..modelFileName)
+
+-- output model to file, storing best params found
 local file=torch.DiskFile(modelFileName,"w"):binary();
 file:writeObject(store_param);
 file:close();

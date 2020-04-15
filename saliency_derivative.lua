@@ -8,8 +8,22 @@ paramdx={}
 ada={}
 local LookupTable=nn.LookupTable;
 
+local dim
+if (arg[1] == nil) then
+    dim = 60
+else
+    dim = tonumber(arg[1])
+end
+
+local modelName
+if (arg[1] == nil) then
+    modelName = "model"
+else
+    modelName = arg[2]
+end
+
 local params={batch_size=1,
-    dimension=60,
+    dimension=dim,
     dropout=0.2,
     init_weight=0.1,
     max_length=100,
@@ -188,13 +202,6 @@ paramx[1],paramdx[1]=encoder_left:parameters()
 paramx[2],paramdx[2]=encoder_right:parameters()
 paramx[3],paramdx[3] =softmax:parameters()
 
-local modelName
-if (arg[1] == nil) then
-    modelName = "model"
-else
-    modelName = arg[1]
-end
-
 print("making saliency_derivative for "..modelName)
 local file=torch.DiskFile("sentiment_bidi/"..modelName,"r"):binary();
 paramx_=file:readObject()
@@ -220,6 +227,7 @@ End,Word,Word_r,Delete=data.read_train(open_train_file,params.batch_size);
 forward(Word,Word_r,Delete);
 pred=softmax:forward({model.h_left[Word:size(2)],model.h_right[Word:size(2)]})
 local score,prediction=torch.max(pred,2)
+print('predicted class: '..prediction[1][1])
 local left_vector=paramx[3][1][{{prediction[1][1]},{}}]
 local right_vector=paramx[3][2][{{prediction[1][1]},{}}]
 
@@ -238,13 +246,6 @@ for i=1,Word:size(2) do
     saliency[{{i},{}}]:copy(paramdx[1][1][{{tonumber(Word[1][i])},{}}])
 end
 saliency=torch.abs(saliency)
-
-local modelName
-if (arg[1] == nil) then
-    modelName = "model"
-else
-    modelName = arg[1]
-end
 
 local file=io.open('matrix',"w")
 for i=1,saliency:size(1) do

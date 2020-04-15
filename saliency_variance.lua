@@ -3,18 +3,25 @@ require "nn"
 local stringx = require('pl.stringx')
 
 
+local dim
+if (arg[1] == nil) then
+    dim = 60
+else
+    dim = tonumber(arg[1])
+end
+
 local params={
-    dimension=60,
+    dimension=dim,
 }
 
 
 cutorch.setDevice(1)
 
 local modelName
-if (arg[1] == nil) then
+if (arg[2] == nil) then
     modelName = "model"
 else
-    modelName = arg[1]
+    modelName = arg[2]
 end
 
 print("making saliency_variance for "..modelName)
