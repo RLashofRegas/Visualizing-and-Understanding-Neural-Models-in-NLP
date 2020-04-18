@@ -25,7 +25,7 @@ else
 end
 
 print("making saliency_variance for "..modelName)
-local file=torch.DiskFile("sentiment_uni/"..modelName,"r"):binary();
+local file=torch.DiskFile("sentiment_bidi/"..modelName,"r"):binary();
 paramx=file:readObject()
 file:close();
 local saliency;

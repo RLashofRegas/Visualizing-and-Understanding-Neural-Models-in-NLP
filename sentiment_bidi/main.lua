@@ -8,16 +8,37 @@ paramdx={}
 ada={}
 local LookupTable=nn.LookupTable;
 
+local dim
+if (arg[1] == nil) then
+    dim = 60
+else
+    dim = tonumber(arg[1])
+end
+
+local dim_embeddings
+if (arg[2] == nil) then
+    dim_embeddings = 60
+else
+    dim_embeddings = tonumber(arg[2])
+end
+
+local log_file_name = 'LRP_Output.txt'
+local log_file = io.open(log_file_name, 'a')
+log_file:write('\n'..dim..','..dim_embeddings)
+log_file:close()
+
+
 local params={batch_size=1000,
     max_iter=20,
-    dimension=3,
+    dimension=dim,
+    dimension_embeddings = dim_embeddings,
     dropout=0.2,
-    train_file="../data/sequence_train.txt",
+    train_file="./data/sequence_train.txt",
     --train_file="small",
     init_weight=0.1,
     learning_rate=0.05,
-    dev_file="../data/sequence_dev_root.txt",
-    test_file="../data/sequence_test_root.txt",
+    dev_file="./data/sequence_dev_root.txt",
+    test_file="./data/sequence_test_root.txt",
     max_length=100,
     vocab_size=19538
 }
@@ -55,7 +76,7 @@ local function lstm(x,prev_h,prev_c)
     -- dropout weights from the output of the previous layer
     local drop_h=nn.Dropout(params.dropout)(prev_h)
     -- dim x 4*dim linear layers on x and h (concatenate to create input gate)
-    local i2h=nn.Linear(params.dimension,4*params.dimension)(drop_x);
+    local i2h=nn.Linear(params.dimension_embeddings,4*params.dimension)(drop_x);
     local h2h=nn.Linear(params.dimension,4*params.dimension)(drop_h);
     -- add tensor ouputs of i2h and h2h = n_phrases x 4*dim dimensional tensor
     local gates=nn.CAddTable()({i2h,h2h});
@@ -83,7 +104,7 @@ local function encoder_()
     local prev_h=nn.Identity()();
     -- <dimension> dimensional embedding vectors, one for each word in vocab
     -- in model returns tensor with 1 row per phrase, row is embedding vector of current word
-    local x=LookupTable(params.vocab_size,params.dimension)(x_index);
+    local x=LookupTable(params.vocab_size,params.dimension_embeddings)(x_index);
     -- get graph nodes for computing next_h and next_c
     next_h,next_c=lstm(x,prev_h,prev_c)
     -- input table
@@ -233,6 +254,7 @@ local function test(filename)
     local right_fine=0;
     local right_coarse = 0;
     local total=0;
+    local total_coarse = 0;
     -- loop through file in minibatches
     while End==0 do
         -- get indexed phrases
@@ -254,21 +276,25 @@ local function test(filename)
         for i=1,prediction:size(1) do
             if Y[i]==prediction[i] then
                 right_fine=right_fine+1;
-                right_coarse = right_coarse + 1;
-            elseif (Y[i] < 3 and prediction[i] < 3) or (Y[i] > 3 and prediction[i] > 3) then
-                right_coarse = right_coarse + 1;
+            end
+            if Y[i] ~= 3 then
+                total_coarse = total_coarse + 1;
+                
+                if (Y[i] < 3 and prediction[i] < 3) or (Y[i] > 3 and prediction[i] > 3) then
+                    right_coarse = right_coarse + 1;
+                end
             end
         end
     end
 
     -- return accuracy
     local accuracy_fine=right_fine / total;
-    local accuracy_coarse = right_coarse / total;
+    local accuracy_coarse = right_coarse / total_coarse;
     return accuracy_fine, accuracy_coarse;
 end
 
 cutorch.setDevice(1)
-data=require("data")
+data=require("./data")
 
 -- get cuda lstms for left and right propogated networks
 -- inputs: prev_h, prev_c and indexed sentence/phrase
@@ -403,19 +429,19 @@ while iter<params.max_iter do
     end
 end
 
-print("test accuracy (fine-grained): "..best_accuracy)
-print("test accuracy (coarse-grained): "..coarse_accuracy)
+local log_file = io.open(log_file_name, 'a')
+log_file:write(','..best_accuracy..','..coarse_accuracy)
+log_file:close()
 
 -- get next file name to store
 local modelName
-if (arg[1] == nil) then
+if (arg[3] == nil) then
     modelName = "model"
 else
-    modelName = arg[1]
+    modelName = arg[3]
 end
 local getNextFileName = require('../get-next-filename.lua')
-local modelFileName = getNextFileName(modelName, '', '.', 2)
-print('Saving model at: '..modelFileName)
+local modelFileName = './sentiment_bidi/'..getNextFileName(modelName, '', '.', 2)
 
 -- output model to file, storing best params found
 local file=torch.DiskFile(modelFileName,"w"):binary();

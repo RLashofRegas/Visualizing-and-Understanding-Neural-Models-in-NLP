@@ -35,7 +35,7 @@ local function read_embedding()
     local D=300;
     tensor=torch.Tensor(V,D):zero();
     local index=0
-    for line in io.lines("sentiment_glove_300.txt") do
+    for line in io.lines("./data/sentiment_glove_300.txt") do
         index=index+1;
         tensor:indexCopy(1,torch.LongTensor({index}),split(line));
     end
