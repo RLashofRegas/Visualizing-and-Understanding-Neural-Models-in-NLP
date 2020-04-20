@@ -6,8 +6,6 @@ import numpy as np
 from sys import argv
 
 model_path = argv[1]
-model_hidden_dim = argv[2]
-model_embedding_dim = argv[3]
 output_file_name = 'LRP_Output.txt'
 
 def predict(words):
@@ -37,17 +35,28 @@ def getLRP(words, target_class):
 def runLRP():
     words = getWords()
 
+    output_file = open(output_file_name, 'r')
+    existing_lines = output_file.readlines()
+    last_line = existing_lines[-1]
+    output_file.close()
+
+    output_file = open(output_file_name, 'a')
+    is_first = True
     for sentence in words:
-        sentence = sentence.replace('\n', '')
+        sentence = sentence.replace('\n', '').strip()
         word_list = sentence.split(' ')
-        target_class = word_list[0]
+        target_class = word_list[0] - 1 # lua model goes off of 1-indexed classes
         sentence_words = word_list[1:]
-        predicted_class = predict(words)
+        predicted_class = predict(sentence_words)
         scores, R_words = getLRP(sentence_words, predicted_class)
 
-        output_str = ',' + target_class + ',' + predicted_class + ',"' + str(sentence) + '","' + str(scores) + '","' + str(R_words) + '",' + html_heatmap(sentence, R_words)
-        output_file = open(output_file_name, 'a')
+        output_str = '|' + str(target_class) + '|' + str(predicted_class) + '|' + str(sentence_words) + '|' + str(scores.tolist()) + '|' + str(R_words.tolist()) + '|' + html_heatmap(sentence_words, R_words)
+        if not is_first:
+            output_str = '\n' + last_line + output_str
+        else:
+            is_first = False
         output_file.write(output_str)
-        output_file.close()
+
+    output_file.close()
 
 runLRP()

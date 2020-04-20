@@ -24,7 +24,7 @@ end
 
 local log_file_name = 'LRP_Output.txt'
 local log_file = io.open(log_file_name, 'a')
-log_file:write('\n'..dim..','..dim_embeddings)
+log_file:write('\n'..dim..'|'..dim_embeddings)
 log_file:close()
 
 
@@ -430,7 +430,7 @@ while iter<params.max_iter do
 end
 
 local log_file = io.open(log_file_name, 'a')
-log_file:write(','..best_accuracy..','..coarse_accuracy)
+log_file:write('|'..best_accuracy..'|'..coarse_accuracy)
 log_file:close()
 
 -- get next file name to store

@@ -4,5 +4,8 @@
     ],
     "Lua.runtime.version": "LuaJIT",
     "python.linting.pylintEnabled": true,
-    "python.linting.enabled": true
+    "python.linting.enabled": true,
+    "rainbow_csv.autodetect_separators": [
+        "|"
+    ]
 }
