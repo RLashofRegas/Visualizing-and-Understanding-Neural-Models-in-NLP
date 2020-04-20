@@ -1,5 +1,5 @@
 # Visualizing and Understanding Neural Models in NLP
-This is a fork from https://github.com/jiweil/Visualizing-and-Understanding-Neural-Models-in-NLP for implementation of my final project. Additional code has been utilized from https://github.com/ArrasL/LRP_for_LSTM for implementing layer-wise relevance propagation.
+This is a fork from https://github.com/jiweil/Visualizing-and-Understanding-Neural-Models-in-NLP for implementation of my final project for Berkeley MIDS W266 NLP. Additional code has been utilized from https://github.com/ArrasL/LRP_for_LSTM for implementing layer-wise relevance propagation.
 
 ## Requirements:
 GPU
